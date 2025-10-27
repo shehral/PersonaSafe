@@ -78,7 +78,6 @@ experiments/
 *.bin
 *.safetensors
 backup-*.tar.gz
-.env.example
 
 # Directories for data, vectors, runs, and results (keep local)
 data/
