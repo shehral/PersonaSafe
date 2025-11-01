@@ -7,4 +7,3 @@ import importlib
 def test_dashboard_import():
     mod = importlib.import_module("examples.dashboard.app")
     assert hasattr(mod, "main")
-

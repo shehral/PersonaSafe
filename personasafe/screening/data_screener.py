@@ -11,16 +11,20 @@ import logging
 
 # Add project root to path to allow imports
 import sys
+
 sys.path.insert(0, ".")
 
 from personasafe.core.persona_extractor import PersonaExtractor
 
 logger = logging.getLogger(__name__)
 
+
 class DataScreener:
     """Screens text data against pre-computed persona vectors."""
 
-    def __init__(self, extractor: PersonaExtractor, persona_vectors: Dict[str, torch.Tensor]):
+    def __init__(
+        self, extractor: PersonaExtractor, persona_vectors: Dict[str, torch.Tensor]
+    ):
         """
         Initializes the DataScreener.
 
@@ -30,7 +34,9 @@ class DataScreener:
         """
         self.extractor = extractor
         self.persona_vectors = persona_vectors
-        logger.info(f"DataScreener initialized for model {extractor.model_name} with {len(persona_vectors)} persona vectors.")
+        logger.info(
+            f"DataScreener initialized for model {extractor.model_name} with {len(persona_vectors)} persona vectors."
+        )
 
     def score_text(self, text: str) -> Dict[str, float]:
         """
@@ -50,16 +56,16 @@ class DataScreener:
         for trait, persona_vector in self.persona_vectors.items():
             # Ensure vectors are on the same device
             persona_vector_device = persona_vector.to(activation_vector.device)
-            
+
             # Calculate the dot product (projection)
             score = torch.dot(activation_vector, persona_vector_device).item()
             scores[trait] = score
-        
+
         return scores
 
     def screen_dataset(
-        self, 
-        dataset: pd.DataFrame, 
+        self,
+        dataset: pd.DataFrame,
         text_column: str = "text",
     ) -> pd.DataFrame:
         """
@@ -80,6 +86,7 @@ class DataScreener:
 
         # Iterate through the DataFrame with a progress bar
         from tqdm import tqdm
+
         tqdm.pandas(desc="Screening Dataset")
 
         for text in dataset[text_column].progress_apply(self.score_text):
@@ -92,7 +99,9 @@ class DataScreener:
         # Join the scores DataFrame with the original dataset
         return dataset.join(scores_df)
 
-    def generate_report(self, screened_df: pd.DataFrame, risk_threshold: float = 0.5) -> Dict[str, Any]:
+    def generate_report(
+        self, screened_df: pd.DataFrame, risk_threshold: float = 0.5
+    ) -> Dict[str, Any]:
         """
         Generates a summary report from a screened dataset.
 
@@ -116,9 +125,11 @@ class DataScreener:
         for col in score_columns:
             trait_name = col.replace("_score", "")
             high_risk_mask = screened_df[col] > risk_threshold
-            
+
             report["high_risk_counts"][trait_name] = int(high_risk_mask.sum())
-            report["high_risk_indices"][trait_name] = screened_df.index[high_risk_mask].tolist()
+            report["high_risk_indices"][trait_name] = screened_df.index[
+                high_risk_mask
+            ].tolist()
             report["average_scores"][trait_name] = screened_df[col].mean()
 
         # Back-compat alias for docs that expect 'high_risk_samples'
