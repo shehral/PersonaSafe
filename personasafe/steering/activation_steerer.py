@@ -4,14 +4,14 @@ Applies steering vectors to a model during generation.
 """
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
 from steering_vectors import SteeringVector, addition_operator
-from typing import List
+from typing import Any, List
+
 
 class ActivationSteerer:
     """A wrapper class to apply steering vectors to a model."""
 
-    def __init__(self, model: AutoModelForCausalLM, tokenizer: AutoTokenizer):
+    def __init__(self, model: Any, tokenizer: Any):
         """
         Initializes the ActivationSteerer.
 
@@ -23,7 +23,7 @@ class ActivationSteerer:
         self.tokenizer = tokenizer
 
     def steer(
-        self, 
+        self,
         prompt: str,
         persona_vector: torch.Tensor,
         multiplier: float,
@@ -47,24 +47,26 @@ class ActivationSteerer:
         inputs = self.tokenizer(prompt, return_tensors="pt")
         inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
         original_output_tokens = self.model.generate(
-            **inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=False,
-            use_cache=True
+            **inputs, max_new_tokens=max_new_tokens, do_sample=False, use_cache=True
         )
-        original_text = self.tokenizer.decode(original_output_tokens[0], skip_special_tokens=True)
+        original_text = self.tokenizer.decode(
+            original_output_tokens[0], skip_special_tokens=True
+        )
 
         # 2. Create the SteeringVector object
-        steering_vector = SteeringVector(layer_activations={layer: persona_vector.to(self.model.device)})
+        steering_vector = SteeringVector(
+            layer_activations={layer: persona_vector.to(self.model.device)}
+        )
 
         # 3. Generate steered output using the context manager
-        with steering_vector.apply(self.model, multiplier=multiplier, operator=addition_operator()):
+        with steering_vector.apply(
+            self.model, multiplier=multiplier, operator=addition_operator()
+        ):
             steered_output_tokens = self.model.generate(
-                **inputs,
-                max_new_tokens=max_new_tokens,
-                do_sample=False,
-                use_cache=True
+                **inputs, max_new_tokens=max_new_tokens, do_sample=False, use_cache=True
             )
-        steered_text = self.tokenizer.decode(steered_output_tokens[0], skip_special_tokens=True)
+        steered_text = self.tokenizer.decode(
+            steered_output_tokens[0], skip_special_tokens=True
+        )
 
         return [original_text, steered_text]
