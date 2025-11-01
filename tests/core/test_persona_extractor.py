@@ -5,11 +5,6 @@ import pytest
 import torch
 from unittest.mock import patch, MagicMock
 
-# Add project root to path to allow imports
-import sys
-
-sys.path.insert(0, ".")
-
 from personasafe.core.persona_extractor import PersonaExtractor
 
 
@@ -75,7 +70,7 @@ def test_persona_extractor_logic(
     ]
 
     # Act
-    # We need to mock the `extract_activations` method to control its output directly for this test
+    # Mock extract_activations to return deterministic activations for this test.
     activations_to_return = [
         positive_activation_1.mean(dim=1).squeeze(),
         positive_activation_2.mean(dim=1).squeeze(),
@@ -101,7 +96,6 @@ def test_persona_extractor_logic(
     assert isinstance(persona_vector, torch.Tensor)
     assert torch.allclose(persona_vector, expected_normalized_vector, atol=1e-6)
     assert abs(persona_vector.norm().item() - 1.0) < 1e-6
-    print("\n✅ Unit test for PersonaExtractor logic passed!")
 
 
 @patch("personasafe.core.persona_extractor.VectorCache")
@@ -128,8 +122,12 @@ def test_extractor_uses_cache(
     mock_cache_instance.get.side_effect = [None, mock_vector]
 
     extractor = PersonaExtractor(model_name="mock-model-cache-test")
-    # Mock the expensive computation part to track its calls
-    extractor._load_model = MagicMock()
+
+    def fake_load_model():
+        extractor.model = MagicMock()
+        extractor.tokenizer = MagicMock()
+
+    extractor._load_model = MagicMock(side_effect=fake_load_model)
     positive_activation = torch.ones(1024)
     negative_activation = torch.zeros(1024)
     extractor.extract_activations = MagicMock(
@@ -185,7 +183,13 @@ def test_compute_persona_vector_raises_on_zero_norm(monkeypatch):
     extractor.cache.get = MagicMock(return_value=None)
     extractor.cache.set = MagicMock()
 
-    monkeypatch.setattr(extractor, "_load_model", MagicMock())
+    def fake_load_model():
+        extractor.model = MagicMock()
+        extractor.tokenizer = MagicMock()
+
+    monkeypatch.setattr(
+        extractor, "_load_model", MagicMock(side_effect=fake_load_model)
+    )
 
     identical_activation = torch.ones(16)
     extractor.extract_activations = MagicMock(return_value=identical_activation)

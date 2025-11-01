@@ -3,15 +3,9 @@
 
 import pytest
 import torch
-from unittest.mock import patch, MagicMock, ANY
-
-# Add project root to path to allow imports
-import sys
-
-sys.path.insert(0, ".")
+from unittest.mock import ANY, MagicMock, patch
 
 from personasafe.steering.activation_steerer import ActivationSteerer
-from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 @pytest.fixture
@@ -72,11 +66,9 @@ def test_steer_method_calls(MockSteeringVector, mock_model_and_tokenizer):
         mock_model, multiplier=multiplier, operator=ANY
     )
 
-    # 3. Check that model.generate was called twice (once outside, once inside the context)
+    # 3. Model.generate should run twice (baseline and steered).
     assert mock_model.generate.call_count == 2
 
     # 4. Check that the outputs are what we expect from the mocks
     assert original_text == "original output"
     assert steered_text == "steered output"
-
-    print("\n✅ Unit test for ActivationSteerer passed!")

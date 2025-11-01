@@ -3,16 +3,10 @@
 Screens datasets for personality drift risks using persona vectors.
 """
 
-from typing import List, Dict, Any
+from typing import Dict, Any
 import torch
 import pandas as pd
-from pathlib import Path
 import logging
-
-# Add project root to path to allow imports
-import sys
-
-sys.path.insert(0, ".")
 
 from personasafe.core.persona_extractor import PersonaExtractor
 
@@ -30,12 +24,17 @@ class DataScreener:
 
         Args:
             extractor: An initialized PersonaExtractor instance.
-            persona_vectors: A dictionary mapping trait names to their corresponding persona vectors.
+            persona_vectors:
+                A dictionary mapping trait names to their corresponding persona
+                vectors.
         """
         self.extractor = extractor
         self.persona_vectors = persona_vectors
+        vector_count = len(persona_vectors)
         logger.info(
-            f"DataScreener initialized for model {extractor.model_name} with {len(persona_vectors)} persona vectors."
+            "DataScreener initialized for model %s with %s persona vectors.",
+            extractor.model_name,
+            vector_count,
         )
 
     def score_text(self, text: str) -> Dict[str, float]:
@@ -73,7 +72,9 @@ class DataScreener:
 
         Args:
             dataset: A pandas DataFrame containing the text data.
-            text_column: The name of the column in the DataFrame that contains the text to screen.
+            text_column:
+                The name of the column in the DataFrame that contains the text
+                to screen.
 
         Returns:
             The original DataFrame with added columns for each trait's score.
@@ -127,9 +128,8 @@ class DataScreener:
             high_risk_mask = screened_df[col] > risk_threshold
 
             report["high_risk_counts"][trait_name] = int(high_risk_mask.sum())
-            report["high_risk_indices"][trait_name] = screened_df.index[
-                high_risk_mask
-            ].tolist()
+            indices = screened_df.index[high_risk_mask].tolist()
+            report["high_risk_indices"][trait_name] = indices
             report["average_scores"][trait_name] = screened_df[col].mean()
 
         # Back-compat alias for docs that expect 'high_risk_samples'

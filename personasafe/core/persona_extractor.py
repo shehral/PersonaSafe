@@ -1,7 +1,12 @@
-from typing import List, Dict, Tuple, Optional
+from typing import List, Optional, Tuple
 import math
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    PreTrainedModel,
+    PreTrainedTokenizerBase,
+)
 import logging
 
 from .vector_cache import VectorCache
@@ -45,8 +50,8 @@ class PersonaExtractor:
         logger.info(f"Initializing PersonaExtractor for {model_name} on {self.device}")
 
         # Defer model loading until it's actually needed
-        self.model = None
-        self.tokenizer = None
+        self.model: Optional[PreTrainedModel] = None
+        self.tokenizer: Optional[PreTrainedTokenizerBase] = None
 
     def _load_model(self):
         """Load the model and tokenizer only when needed."""
@@ -71,13 +76,25 @@ class PersonaExtractor:
             self.model.to(self.device)
             self.model.eval()  # Evaluation mode (no gradients)
 
-            logger.info(
-                f"Model loaded successfully ({self.model.num_parameters():,} parameters)"
-            )
+            param_count = f"{self.model.num_parameters():,}"
+            logger.info("Model loaded successfully (%s parameters)", param_count)
 
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             raise
+
+    def _ensure_model(self) -> Tuple[PreTrainedModel, PreTrainedTokenizerBase]:
+        """
+        Ensure the underlying model and tokenizer are ready for use.
+
+        Returns:
+            Tuple containing the loaded model and tokenizer.
+        """
+        if self.model is None or self.tokenizer is None:
+            self._load_model()
+        assert self.model is not None
+        assert self.tokenizer is not None
+        return self.model, self.tokenizer
 
     def extract_activations(
         self, text: str, layer: Optional[int] = None
@@ -92,18 +109,15 @@ class PersonaExtractor:
             torch.Tensor: Activation vector from specified layer
         """
         # Ensure model is loaded before extracting activations
-        if self.model is None or self.tokenizer is None:
-            self._load_model()
+        model, tokenizer = self._ensure_model()
 
         # Tokenize
-        inputs = self.tokenizer(
-            text, return_tensors="pt", padding=True, truncation=True
-        )
+        inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         # Forward pass (no gradients)
         with torch.no_grad():
-            outputs = self.model(**inputs, output_hidden_states=True)
+            outputs = model(**inputs, output_hidden_states=True)
 
         # Determine which layer to use
         target_layer_idx = self.layer_idx if layer is None else layer
@@ -143,21 +157,27 @@ class PersonaExtractor:
         # 2. If not in cache, load model and compute
         if not positive_prompts:
             raise ValueError(
-                f"positive_prompts must contain at least one prompt for trait '{trait_name}'."
+                "positive_prompts must contain at least one prompt for trait "
+                f"'{trait_name}'."
             )
         if not negative_prompts:
             raise ValueError(
-                f"negative_prompts must contain at least one prompt for trait '{trait_name}'."
+                "negative_prompts must contain at least one prompt for trait "
+                f"'{trait_name}'."
             )
 
         logger.info(
-            f"Cache miss for {self.model_name}/{trait_name}. Computing new vector."
+            "Cache miss for %s/%s. Computing new vector.",
+            self.model_name,
+            trait_name,
         )
-        self._load_model()
+        self._ensure_model()
 
-        logger.info(f"Computing persona vector for '{trait_name}'...")
+        logger.info("Computing persona vector for '%s'...", trait_name)
         logger.info(
-            f"  Using {len(positive_prompts)} positive and {len(negative_prompts)} negative prompts"
+            "  Using %s positive and %s negative prompts",
+            len(positive_prompts),
+            len(negative_prompts),
         )
 
         # Extract activations for positive prompts

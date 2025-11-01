@@ -1,16 +1,11 @@
 #!/usr/bin/env python
 """Tests for the DataScreener class."""
 
+import pandas as pd
 import pytest
 import torch
-import pandas as pd
-from unittest.mock import patch, MagicMock
 from typing import Dict
-
-# Add project root to path to allow imports
-import sys
-
-sys.path.insert(0, ".")
+from unittest.mock import MagicMock
 
 from personasafe.core.persona_extractor import PersonaExtractor
 from personasafe.screening.data_screener import DataScreener
@@ -67,8 +62,6 @@ def test_score_text(
 
     mock_extractor.extract_activations.assert_called_once_with("some text")
 
-    print("\n✅ Unit test for score_text passed!")
-
 
 def test_screen_dataset(
     mock_extractor: MagicMock, mock_persona_vectors: Dict[str, torch.Tensor]
@@ -105,8 +98,6 @@ def test_screen_dataset(
     assert pytest.approx(screened_df.loc[0, "trait2_score"]) == 0.1
 
     assert pytest.approx(screened_df.loc[1, "trait2_score"]) == 0.9
-
-    print("\n✅ Unit test for screen_dataset passed!")
 
 
 def test_generate_report(
@@ -149,5 +140,3 @@ def test_generate_report(
     assert report["high_risk_counts"]["trait2"] == 1
 
     assert report["high_risk_indices"]["trait2"] == [0]
-
-    print("\n✅ Unit test for generate_report passed!")

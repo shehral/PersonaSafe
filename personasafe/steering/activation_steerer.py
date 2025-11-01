@@ -4,15 +4,14 @@ Applies steering vectors to a model during generation.
 """
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
 from steering_vectors import SteeringVector, addition_operator
-from typing import List
+from typing import Any, List
 
 
 class ActivationSteerer:
     """A wrapper class to apply steering vectors to a model."""
 
-    def __init__(self, model: AutoModelForCausalLM, tokenizer: AutoTokenizer):
+    def __init__(self, model: Any, tokenizer: Any):
         """
         Initializes the ActivationSteerer.
 

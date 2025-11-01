@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 """Tests for the VectorCache class."""
 
+import json
 import pytest
 import torch
-import json
 from pathlib import Path
-
-# Add project root to path to allow imports
-import sys
-
-sys.path.insert(0, ".")
 
 from personasafe.core.vector_cache import VectorCache
 
@@ -23,7 +18,7 @@ def temp_cache_dir(tmp_path: Path) -> str:
 def test_cache_initialization_nested_dirs(tmp_path: Path):
     """Cache init should create nested directories when requested."""
     nested_dir = tmp_path / "nested" / "persona" / "cache"
-    cache = VectorCache(cache_dir=str(nested_dir))
+    VectorCache(cache_dir=str(nested_dir))
     assert nested_dir.is_dir()
     assert (nested_dir / "metadata.json").exists()
 
@@ -31,7 +26,7 @@ def test_cache_initialization_nested_dirs(tmp_path: Path):
 def test_cache_initialization(temp_cache_dir: str):
     """Test that the cache directory and metadata are created on init."""
     # Arrange & Act
-    cache = VectorCache(cache_dir=temp_cache_dir)
+    VectorCache(cache_dir=temp_cache_dir)
 
     # Assert
     assert Path(temp_cache_dir).is_dir()
