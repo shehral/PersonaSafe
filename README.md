@@ -10,7 +10,8 @@
 
 ---
 
-## 🎯 Overview (Note: This repo is still under development so some details might not be accurate)
+## Note: This repo is still under development so some details might not be accurate
+## 🎯 Overview 
 
 PersonaSafe is a production-ready toolkit for detecting and mitigating personality drift in language models **before** fine-tuning. Built on the [Persona Vectors methodology](https://github.com/safety-research/persona_vectors), it enables researchers and teams to screen datasets, monitor model behavior, and steer activations in real-time.
 
