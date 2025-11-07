@@ -156,7 +156,7 @@ PersonaSafe/
 
 PersonaSafe implements and extends the methodology from:
 
-- **[Persona Vectors](https://github.com/safety-research/persona_vectors)** (Ameisen et al., 2024) - Monitoring and controlling character traits in LLMs
+- **[Persona Vectors](https://github.com/safety-research/persona_vectors)** (Chen et al., 2025) - Persona Vectors: Monitoring and controlling character traits in LLMs
 - **[Safety Research Organization](https://github.com/safety-research)** - AI safety tooling and research
 
 ### What's New in PersonaSafe?
